@@ -28,6 +28,7 @@ public class LoadingScreen {
     private final Label state = new Label();
     private final ProgressIndicator progress = new ProgressIndicator();
     //Stage properties
+    private String title = "Loading...";
     private double width = 300, height = 175; //Default width and height values
     private Modality modality = Modality.APPLICATION_MODAL;
     private Paint textFill = Color.web("#3d81e3"); //Sets the text color bluish by default
@@ -37,11 +38,13 @@ public class LoadingScreen {
     //Constructor
     public LoadingScreen(Task t) { task = t; }
     //Getters
+    public String getTitle() { return title; }
     public double getWidth() { return width; }
     public double getHeight() { return height; }
     public Modality getModality() { return modality; }
     public Task getTask() { return task; }
     //Setters
+    public void setTitle(String t) { title = t; }
     public void setWidth(double w) { width = w; }
     public void setHeight(double h) { height = h; }
     public void initModality(Modality m) { modality = m; }
@@ -50,6 +53,7 @@ public class LoadingScreen {
     //Creates stage and elements
     private Stage genStage() {
         Stage stage = new Stage();
+        stage.setTitle(title);
         stage.initModality(modality);
         stage.setWidth(width);
         stage.setHeight(height);

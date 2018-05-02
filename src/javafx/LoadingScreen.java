@@ -11,7 +11,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
-import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -55,8 +54,6 @@ public class LoadingScreen {
         stage.setWidth(width);
         stage.setHeight(height);
         stage.initStyle(StageStyle.UNDECORATED);
-        Image icon = new Image(getClass().getResourceAsStream("/resources/loading-icon.png"));
-        stage.getIcons().add(icon);
         VBox root = new VBox();
         root.setAlignment(Pos.CENTER);
         state.setTextFill(textFill); 

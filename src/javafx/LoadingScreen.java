@@ -34,8 +34,8 @@ public class LoadingScreen {
     private Modality modality = Modality.APPLICATION_MODAL;
     private Paint textFill = Color.web("#3d81e3"); //Sets the text color bluish by default
     private Image[] icons;
-    
-    private final Task task;
+    //Task the loading screen will be doing
+    private Task task;
     
     //Constructor
     public LoadingScreen(Task t) { task = t; }
@@ -51,6 +51,7 @@ public class LoadingScreen {
     public void setHeight(double h) { height = h; }
     public void initModality(Modality m) { modality = m; }
     public void setTextFill(Paint p) { textFill = p; }
+    public void setTask(Task t) { task = t; }
     //Add icons to stage
     public void addIcons(Image... ics) { icons = ics; }
     //Creates stage and elements

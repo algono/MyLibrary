@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -32,6 +33,7 @@ public class LoadingScreen {
     private double width = 300, height = 175; //Default width and height values
     private Modality modality = Modality.APPLICATION_MODAL;
     private Paint textFill = Color.web("#3d81e3"); //Sets the text color bluish by default
+    private Image[] icons;
     
     private final Task task;
     
@@ -49,7 +51,8 @@ public class LoadingScreen {
     public void setHeight(double h) { height = h; }
     public void initModality(Modality m) { modality = m; }
     public void setTextFill(Paint p) { textFill = p; }
-    
+    //Add icons to stage
+    public void addIcons(Image... ics) { icons = ics; }
     //Creates stage and elements
     private Stage genStage() {
         Stage stage = new Stage();
@@ -58,6 +61,8 @@ public class LoadingScreen {
         stage.setWidth(width);
         stage.setHeight(height);
         stage.initStyle(StageStyle.UNDECORATED);
+        stage.getIcons().addAll(icons);
+        stage.setOnCloseRequest(e -> e.consume()); //Doesn't allow the user to close the window by any means
         VBox root = new VBox();
         root.setAlignment(Pos.CENTER);
         state.setTextFill(textFill); 

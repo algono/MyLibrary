@@ -95,8 +95,6 @@ public class LoadingScreen {
                     Task t = queue.poll();
                     Platform.runLater(() -> state.textProperty().bind(t.messageProperty()));
                     t.run(); t.get(); //Runs the task and waits for its completion
-                    Throwable exception =  t.getException();
-                    if (exception != null) throw (Exception) exception;
                     if (t.isCancelled()) cancel();
                 }
                 return null;
@@ -109,7 +107,7 @@ public class LoadingScreen {
         new Thread(mainTask).start();
         //Shows the loading screen
         stage.showAndWait();
-        //Returns if the task succeeded or not
+        //Returns if all tasks succeeded or not
         return mainTask.getState() == Worker.State.SUCCEEDED;
     }
 }

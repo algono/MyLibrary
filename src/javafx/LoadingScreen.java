@@ -8,6 +8,9 @@ package javafx;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.geometry.Pos;
@@ -37,24 +40,26 @@ public class LoadingScreen {
     private Modality modality = Modality.APPLICATION_MODAL;
     private Paint textFill = Color.web("#3d81e3"); //Sets the text color bluish by default
     private final List<Image> icons = new ArrayList<>();
-    //Task the loading screen will be doing
-    private Task task;
+    //Queue containing the tasks the loading screen will be doing
+    private final BlockingQueue<Task> queue;
     
     //Constructor
-    public LoadingScreen(Task t) { task = t; }
+    public LoadingScreen(Task... tasks) {
+        queue = new LinkedBlockingQueue<>(Arrays.asList(tasks));
+    }
     //Getters
     public String getTitle() { return title; }
     public double getWidth() { return width; }
     public double getHeight() { return height; }
     public Modality getModality() { return modality; }
-    public Task getTask() { return task; }
+    public BlockingQueue<Task> getQueue() { return queue; }
+    public ProgressIndicator getProgressIndicator() { return progress; }
     //Setters
     public void setTitle(String t) { title = t; }
     public void setWidth(double w) { width = w; }
     public void setHeight(double h) { height = h; }
     public void initModality(Modality m) { modality = m; }
     public void setTextFill(Paint p) { textFill = p; }
-    public void setTask(Task t) { task = t; }
     //Add icons to stage
     public void addIcons(Image... ics) { icons.addAll(Arrays.asList(ics)); }
     //Creates stage and elements
@@ -82,16 +87,26 @@ public class LoadingScreen {
      */
     public boolean load() {
         Stage stage = genStage();
-        //Sets bindings and listeners
-        state.textProperty().bind(task.messageProperty());
-        task.runningProperty().addListener((obs, oldValue, newValue) -> {
+        //The main task runs the tasks from the queue secuentially
+        Task<Void> mainTask = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                while (!queue.isEmpty()) {
+                    Task t = queue.poll();
+                    Platform.runLater(() -> state.textProperty().bind(t.messageProperty()));
+                    t.run();
+                }
+                return null;
+            }
+        };
+        mainTask.runningProperty().addListener((obs, oldValue, newValue) -> {
             if (!newValue) stage.hide();
         });
-        //Starts the task
-        new Thread(task).start();
+        //Starts the main task
+        new Thread(mainTask).start();
         //Shows the loading screen
         stage.showAndWait();
         //Returns if the task succeeded or not
-        return task.getState() == Worker.State.SUCCEEDED;
+        return mainTask.getState() == Worker.State.SUCCEEDED;
     }
 }

@@ -91,10 +91,13 @@ public class LoadingScreen {
         Task<Void> mainTask = new Task() {
             @Override
             protected Void call() throws Exception {
-                while (!queue.isEmpty()) {
+                while (!isCancelled() && !queue.isEmpty()) {
                     Task t = queue.poll();
                     Platform.runLater(() -> state.textProperty().bind(t.messageProperty()));
-                    t.run();
+                    t.run(); t.get(); //Runs the task and waits for its completion
+                    Throwable exception =  t.getException();
+                    if (exception != null) throw (Exception) exception;
+                    if (t.isCancelled()) cancel();
                 }
                 return null;
             }

@@ -3,15 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package javafx;
+package myLibrary.javafx;
 
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.LinkedBlockingQueue;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
@@ -28,19 +28,30 @@ import javafx.stage.StageStyle;
 public class LoadingStage extends Stage {
     
     //Stage elements
-    private Label state = new Label();
+    private Label label = new Label();
     private ProgressIndicator progress = new ProgressIndicator();
     //Queue containing the tasks the loading screen will be doing
     private final BlockingQueue<Task> queue;
     //The main task runs the tasks from the queue secuentially
     private final Task<Void> mainTask = new Task() {
+        private Task currentTask;
+        //If the main task is cancelled, it cancels any currently running task as well
+        @Override
+        protected void cancelled() {
+            if (currentTask != null) currentTask.cancel();
+        }
+        
         @Override
         protected Void call() throws Exception {
             while (!isCancelled() && !queue.isEmpty()) {
-                Task t = queue.poll();
-                Platform.runLater(() -> state.textProperty().bind(t.messageProperty()));
-                t.run(); t.get(); //Runs the task and waits for its completion
-                if (t.isCancelled()) cancel();
+                currentTask = queue.poll();
+                Platform.runLater(() -> label.textProperty().bind(currentTask.messageProperty()));
+                currentTask.run(); 
+                try {
+                    currentTask.get(); //Runs the task and waits for its completion
+                } catch (CancellationException ex) { //If the running task was cancelled, cancel the main task as well
+                    cancel();
+                }
             }
             return null;
         }
@@ -52,8 +63,12 @@ public class LoadingStage extends Stage {
         setWidth(300); setHeight(175); //Default width and height values
         initModality(Modality.APPLICATION_MODAL);
         initStyle(StageStyle.UNDECORATED);
-        state.setTextFill(Color.web("#3d81e3")); //Sets the text color bluish by default
-        setOnCloseRequest(e -> e.consume()); //Doesn't allow the user to close the window by any means
+        label.setTextFill(Color.web("#3d81e3")); //Sets the text color bluish by default
+        //If the user tries to close the stage, it cancels the main task
+        setOnCloseRequest(e -> { 
+            mainTask.cancel(); 
+            e.consume(); //This will prevent the window from closing until the task has been successfully cancelled
+        });
         genScene(); //Sets the default scene
         //Whenever the stage is shown, run the tasks
         showingProperty().addListener((obs, oldValue, newValue) -> {
@@ -69,7 +84,7 @@ public class LoadingStage extends Stage {
     }
     //Getters
     public BlockingQueue<Task> getQueue() { return queue; }
-    public Label getLabel() { return state; }
+    public Label getLabel() { return label; }
     public ProgressIndicator getProgressIndicator() { return progress; }
     //Ways to get if the tasks succeeded or not
     //1- Wait without timeout
@@ -89,16 +104,13 @@ public class LoadingStage extends Stage {
         return mainTask.getState() == Worker.State.SUCCEEDED;
     }
     //Setters
-    public void setLabel(Label l) { state = l; }
+    public void setLabel(Label l) { label = l; }
     public void setProgressIndicator(ProgressIndicator p) { progress = p; }
-
     //PRIVATE METHODS
     
     //Creates scene and elements
     private void genScene() {
-        VBox root = new VBox(state, progress);
-        root.setAlignment(Pos.CENTER);
-        root.setSpacing(10);
+        VBox root = new VBox(label, progress);
         Scene scene = new Scene(root, getWidth(), getHeight());
         setScene(scene);
     }

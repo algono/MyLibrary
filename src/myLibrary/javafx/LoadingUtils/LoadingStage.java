@@ -49,4 +49,5 @@ public class LoadingStage extends Stage {
     public boolean waitFor() { return scene.waitFor(); }
     public boolean waitFor(long timeout) { return scene.waitFor(timeout); }
     public boolean isSucceeded() { return scene.isSucceeded(); }
+    
 }

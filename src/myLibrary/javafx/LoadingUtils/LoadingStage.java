@@ -6,8 +6,6 @@
 package myLibrary.javafx.LoadingUtils;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import javafx.concurrent.Task;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -48,8 +46,8 @@ public class LoadingStage extends Stage {
     //Getting the queue
     public BlockingQueue<Task> getQueue() { return scene.getQueue(); }
     //Getting if tasks succeeded or not
-    public boolean waitFor() throws InterruptedException, ExecutionException, TimeoutException { return scene.waitFor(); }
-    public boolean waitFor(long timeout) throws InterruptedException, ExecutionException, TimeoutException { return scene.waitFor(timeout); }
+    public boolean waitFor() throws InterruptedException { return scene.waitFor(); }
+    public boolean waitFor(long timeout) throws InterruptedException { return scene.waitFor(timeout); }
     public boolean isSucceeded() { return scene.isSucceeded(); }
     
 }

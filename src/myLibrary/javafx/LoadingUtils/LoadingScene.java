@@ -6,8 +6,6 @@
 package myLibrary.javafx.LoadingUtils;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
@@ -67,8 +65,8 @@ public class LoadingScene extends Scene {
     public BlockingQueue<Task> getQueue() { return loadingQueue.getQueue(); }
     
     //Getting if tasks succeeded or not
-    public boolean waitFor() throws InterruptedException, ExecutionException, TimeoutException { return loadingQueue.waitFor(); }
-    public boolean waitFor(long timeout) throws InterruptedException, ExecutionException, TimeoutException { return loadingQueue.waitFor(timeout); }
+    public boolean waitFor() throws InterruptedException { return loadingQueue.waitFor(); }
+    public boolean waitFor(long timeout) throws InterruptedException { return loadingQueue.waitFor(timeout); }
     public boolean isSucceeded() { return loadingQueue.isSucceeded(); }
     
 }

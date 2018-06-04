@@ -6,6 +6,8 @@
 package myLibrary.javafx.LoadingUtils;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
@@ -43,8 +45,8 @@ public class LoadingScene extends Scene {
         //Sets the text color bluish by default
         label.setTextFill(Color.web("#3d81e3"));
         //Binds the label's text and the indicator's progress to the main task's message and progress
-        label.textProperty().bind(loadingQueue.mainTask.messageProperty());
-        progress.progressProperty().bind(loadingQueue.mainTask.progressProperty());
+        label.textProperty().bind(loadingQueue.messageProperty());
+        progress.progressProperty().bind(loadingQueue.progressProperty());
         //Listener that starts the loading process
         startListener = (obs, oldValue, newValue) -> {
             if (newValue) { loadingQueue.start(); }
@@ -65,8 +67,8 @@ public class LoadingScene extends Scene {
     public BlockingQueue<Task> getQueue() { return loadingQueue.getQueue(); }
     
     //Getting if tasks succeeded or not
-    public boolean waitFor() { return loadingQueue.waitFor(); }
-    public boolean waitFor(long timeout) { return loadingQueue.waitFor(timeout); }
+    public boolean waitFor() throws InterruptedException, ExecutionException, TimeoutException { return loadingQueue.waitFor(); }
+    public boolean waitFor(long timeout) throws InterruptedException, ExecutionException, TimeoutException { return loadingQueue.waitFor(timeout); }
     public boolean isSucceeded() { return loadingQueue.isSucceeded(); }
     
 }

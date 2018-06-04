@@ -7,6 +7,7 @@ package myLibrary.javafx.LoadingUtils;
 
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
@@ -38,11 +39,14 @@ public class LoadingQueue {
                     message.bind(currentTask.messageProperty());
                     progress.bind(currentTask.progressProperty());
                 });
-                currentTask.run(); currentTask.get();
+                currentTask.run();
+                CountDownLatch latch = new CountDownLatch(1);
                 Platform.runLater(() -> {
                     message.unbind(); progress.unbind();
                     if (currentTask.getState() != Worker.State.SUCCEEDED) { cancel(); }
+                    latch.countDown();
                 });
+                latch.await();
             }
             return null;
         }

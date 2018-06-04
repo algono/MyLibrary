@@ -19,7 +19,7 @@ public class LoadingQueue {
 
     //Queue containing the tasks the loading screen will be doing
     protected final BlockingQueue<Task> queue;
-    //The main task runs the tasks from the queue secuentially
+    //The main task which runs the tasks from the queue secuentially
     protected final Task<Void> mainTask = new Task<Void>() {
         private Task currentTask;
         //If the main task is cancelled, it cancels any currently running task as well
@@ -34,18 +34,20 @@ public class LoadingQueue {
             while (!isCancelled() && !queue.isEmpty()) {
                 currentTask = queue.poll();
                 currentTask.messageProperty().addListener((obs, oldMsg, newMsg) -> updateMessage(newMsg));
+                currentTask.progressProperty().addListener((obs, oldProg, newProg) -> {
+                    updateProgress(currentTask.getWorkDone(), currentTask.getTotalWork());
+                });
                 currentTask.run();
                 if (currentTask.isCancelled()) cancel(); //If the current task was cancelled, cancel all
             }
             return null;
         }
     };
+    //The thread containing the main task
+    protected final Thread thread = new Thread(mainTask);
+    
     public LoadingQueue(Task... tasks) {
         queue = new LinkedBlockingQueue<>(Arrays.asList(tasks));
-        //When all tasks end, notify the threads waiting for its completion
-        mainTask.runningProperty().addListener((obs, oldValue, newValue) -> {
-            if (!newValue) synchronized(this) { notifyAll(); }
-        });
     }
     //Getters
     public BlockingQueue<Task> getQueue() { return queue; }
@@ -57,7 +59,7 @@ public class LoadingQueue {
     //2- Wait with timeout (milliseconds)
     public synchronized boolean waitFor(long timeout) {
         try {
-            while (mainTask.isRunning()) { wait(timeout); }
+            thread.join(timeout);
         } catch (InterruptedException ex) {}
         
         return mainTask.getState() == Worker.State.SUCCEEDED;
@@ -66,8 +68,9 @@ public class LoadingQueue {
     public boolean isSucceeded() {
         return mainTask.getState() == Worker.State.SUCCEEDED;
     }
-    //Start the loading process
-    public void start() { new Thread(mainTask).start(); }
+    //Starts the loading process
+    public void start() { thread.start(); }
     //Cancels the loading process (by cancelling the main task)
     public void cancel() { mainTask.cancel(); }
+    
 }

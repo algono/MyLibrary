@@ -39,15 +39,18 @@ public class LoadingStage extends Stage {
             e.consume(); //This will prevent the window from closing until the task has been successfully cancelled
         });
         //When all tasks end, hide the stage
-        scene.loadingQueue.mainTask.runningProperty().addListener((obs, oldValue, newValue) -> { 
-            if (!newValue) hide();
+        showingProperty().addListener((obs, wasShowing, isShowing) -> { 
+            if (isShowing) {
+                scene.loadingQueue.waitFor();
+                hide();
+            }
         });
     }
     //Getting the queue
     public BlockingQueue<Task> getQueue() { return scene.getQueue(); }
     //Getting if tasks succeeded or not
-    public boolean waitFor() throws InterruptedException { return scene.waitFor(); }
-    public boolean waitFor(long timeout) throws InterruptedException { return scene.waitFor(timeout); }
+    public boolean waitFor() { return scene.waitFor(); }
+    public boolean waitFor(long timeout) { return scene.waitFor(timeout); }
     public boolean isSucceeded() { return scene.isSucceeded(); }
     
 }

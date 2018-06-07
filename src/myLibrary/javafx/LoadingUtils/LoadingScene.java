@@ -65,8 +65,8 @@ public class LoadingScene extends Scene {
     public BlockingQueue<Task> getQueue() { return loadingQueue.getQueue(); }
     
     //Getting if tasks succeeded or not
-    public boolean waitFor() throws InterruptedException { return loadingQueue.waitFor(); }
-    public boolean waitFor(long timeout) throws InterruptedException { return loadingQueue.waitFor(timeout); }
+    public boolean waitFor() { return loadingQueue.waitFor(); }
+    public boolean waitFor(long timeout) { return loadingQueue.waitFor(timeout); }
     public boolean isSucceeded() { return loadingQueue.isSucceeded(); }
     
 }

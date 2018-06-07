@@ -22,7 +22,8 @@ public class LoadingQueue {
     //Queue containing the tasks the loading screen will be doing
     protected final BlockingQueue<Task> queue;
     //Main service
-    private final LoadingService main;
+    final LoadingService main;
+    
     public LoadingQueue(Task... tasks) {
         queue = new LinkedBlockingQueue<>(Arrays.asList(tasks));
         main = new LoadingService(this);
@@ -31,11 +32,20 @@ public class LoadingQueue {
             if (!isRunning) synchronized(this) { this.notifyAll(); }
         });
     }
+    
     //Getters
     public BlockingQueue<Task> getQueue() { return queue; }
+    
+    //If all tasks have totalWork == -1 (which means that the task's progress is indeterminate) then all the queue is considered indeterminate
+    public boolean isProgressIndeterminate() {
+        for (Task t : queue) { if (t.getTotalWork() != -1) return false; }
+        return true;
+    }
+    
     //Properties
     public ReadOnlyStringProperty messageProperty() { return main.messageProperty(); }
     public ReadOnlyDoubleProperty progressProperty() { return main.progressProperty(); }
+    
     //Ways to get if the tasks succeeded or not
     //1- Wait without timeout
     public boolean waitFor() {
@@ -52,10 +62,11 @@ public class LoadingQueue {
     }
     //3- Without waiting, if it is still running returns false
     public boolean isSucceeded() { 
-        return main.getState() == Worker.State.SUCCEEDED; }
+        return main.getState() == Worker.State.SUCCEEDED;
+    }
     
     public void start() {
-        main.restart(); main.start();
+        main.restart();
     }
     
     public void cancel() {

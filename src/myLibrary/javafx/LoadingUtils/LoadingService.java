@@ -8,6 +8,7 @@ package myLibrary.javafx.LoadingUtils;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
@@ -39,9 +40,15 @@ class LoadingService extends Service<Void> {
     @Override
     protected Task<Void> createTask() {
         return new Task<Void>() {
+            //Listeners for updating the properties
+            private final ChangeListener<String> msgListener = (obs, oldMsg, newMsg) -> updateMessage(newMsg);
+            private final ChangeListener<Number> progressListener = (obs, oldProg, newProg) -> {
+                if (newProg.intValue() != -1) {
+                    updateProgress(getWorkDone() + currentTask.getWorkDone(), getTotalWork());
+                }
+            };
             @Override
-            protected Void call() throws Exception {
-                
+            protected Void call() throws Exception {       
                 double workCount = 0.0;
                 for (Task t : queue) {
                     double tWork = t.getTotalWork();
@@ -50,25 +57,31 @@ class LoadingService extends Service<Void> {
                 updateProgress(0, workCount); //Initial progress
                 
                 while (!isCancelled() && !queue.isEmpty()) {
+                    //Gets a task from the queue
                     currentTask = queue.poll();
-
-                    currentTask.messageProperty().addListener((obs, oldMsg, newMsg) -> updateMessage(newMsg));
-                    currentTask.progressProperty().addListener((obs, oldProg, newProg) -> {
-                        updateProgress(getWorkDone() + currentTask.getWorkDone(), getTotalWork());
-                    });
-
+                    
+                    //Adds the updater listeners to the current task properties
+                    currentTask.messageProperty().addListener(msgListener);
+                    currentTask.progressProperty().addListener(progressListener);
+                    
+                    //Runs the task
                     currentTask.run();
-
+                    
                     CountDownLatch latch = new CountDownLatch(1);
                     Platform.runLater(() -> {
+                        //Removes the updater listeners from the task properties (as it has ended)
+                        currentTask.messageProperty().removeListener(msgListener);
+                        currentTask.progressProperty().removeListener(progressListener);
+                        
+                        //Checks if the task succeeded. If it didn't, the whole process is cancelled
                         if (currentTask.getState() != Worker.State.SUCCEEDED) {
                             this.cancel();
                         }
+                        
                         latch.countDown();
                     });
                     latch.await();
                 }
-                
                 return null;
             }
         };

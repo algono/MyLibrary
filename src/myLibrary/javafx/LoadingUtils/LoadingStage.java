@@ -33,19 +33,19 @@ public class LoadingStage extends Stage {
         setWidth(scene.getWidth()); setHeight(scene.getHeight());
         initModality(Modality.APPLICATION_MODAL);
         setScene(scene);
+        
         //If the user tries to close the stage, it cancels the main task
         setOnCloseRequest(e -> { 
             scene.loadingQueue.cancel();
             e.consume(); //This will prevent the window from closing until the task has been successfully cancelled
         });
+        
         //When all tasks end, hide the stage
-        showingProperty().addListener((obs, wasShowing, isShowing) -> { 
-            if (isShowing) {
-                scene.loadingQueue.waitFor();
-                hide();
-            }
+        scene.loadingQueue.main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
+            if (!isRunning) hide();
         });
     }
+    
     //Getting the queue
     public BlockingQueue<Task> getQueue() { return scene.getQueue(); }
     //Getting if tasks succeeded or not

@@ -5,7 +5,6 @@
  */
 package myLibrary.javafx.LoadingUtils;
 
-import java.util.concurrent.BlockingQueue;
 import javafx.concurrent.Task;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -18,6 +17,8 @@ import javafx.stage.StageStyle;
 public class LoadingStage extends Stage {
     
     private final LoadingScene scene;
+    //Whether the stage should hide automatically when the loading service ends
+    private boolean implicitHiding = true;
     
     //Constructors
     public LoadingStage(Task... tasks) {
@@ -40,17 +41,22 @@ public class LoadingStage extends Stage {
             e.consume(); //This will prevent the window from closing until the task has been successfully cancelled
         });
         
-        //When all tasks end, hide the stage
+        //If all tasks ended and the implicitHiding value is set to true, hide the stage
         scene.loadingQueue.main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
-            if (!isRunning) hide();
+            if (!isRunning && implicitHiding) hide();
         });
     }
     
     //Getting the queue
-    public BlockingQueue<Task> getQueue() { return scene.getQueue(); }
+    public LoadingQueue getQueue() { return scene.getQueue(); }
+    
     //Getting if tasks succeeded or not
     public boolean waitFor() { return scene.waitFor(); }
     public boolean waitFor(long timeout) { return scene.waitFor(timeout); }
     public boolean isSucceeded() { return scene.isSucceeded(); }
     
+    public void setImplicitHiding(boolean isHiding) {
+        implicitHiding = isHiding;
+        if (implicitHiding && !scene.loadingQueue.main.isRunning()) hide();
+    }
 }

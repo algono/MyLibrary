@@ -5,7 +5,6 @@
  */
 package myLibrary.javafx.LoadingUtils;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -19,11 +18,11 @@ import javafx.concurrent.Worker;
  */
 class LoadingService extends Service<Void> {
 
-    private final BlockingQueue<Task> queue;
+    private final LoadingQueue queue;
     private Task currentTask;
 
-    public LoadingService(LoadingQueue loadingQueue) {
-        queue = loadingQueue.queue;
+    public LoadingService(LoadingQueue lQueue) {
+        queue = lQueue;
     }
 
     public Task getCurrentTask() {
@@ -43,19 +42,10 @@ class LoadingService extends Service<Void> {
             //Listeners for updating the properties
             private final ChangeListener<String> msgListener = (obs, oldMsg, newMsg) -> updateMessage(newMsg);
             private final ChangeListener<Number> progressListener = (obs, oldProg, newProg) -> {
-                if (newProg.intValue() != -1) {
-                    updateProgress(getWorkDone() + currentTask.getWorkDone(), getTotalWork());
-                }
+                updateProgress(currentTask.getWorkDone(), currentTask.getTotalWork());
             };
             @Override
-            protected Void call() throws Exception {       
-                double workCount = 0.0;
-                for (Task t : queue) {
-                    double tWork = t.getTotalWork();
-                    if (tWork > 0) workCount += tWork;
-                }
-                updateProgress(0, workCount); //Initial progress
-                
+            protected Void call() throws Exception {
                 while (!isCancelled() && !queue.isEmpty()) {
                     //Gets a task from the queue
                     currentTask = queue.poll();

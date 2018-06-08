@@ -6,7 +6,6 @@
 package myLibrary.javafx.LoadingUtils;
 
 import java.util.Arrays;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -17,29 +16,18 @@ import javafx.concurrent.Worker;
  *
  * @author Alejandro
  */
-public class LoadingQueue {
+public class LoadingQueue extends LinkedBlockingQueue<Task> {
 
-    //Queue containing the tasks the loading screen will be doing
-    protected final BlockingQueue<Task> queue;
     //Main service
     final LoadingService main;
     
     public LoadingQueue(Task... tasks) {
-        queue = new LinkedBlockingQueue<>(Arrays.asList(tasks));
+        super(Arrays.asList(tasks));
         main = new LoadingService(this);
         //When the service stops running, notify the threads waiting on waitFor()
         main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
             if (!isRunning) synchronized(this) { this.notifyAll(); }
         });
-    }
-    
-    //Getters
-    public BlockingQueue<Task> getQueue() { return queue; }
-    
-    //If all tasks have totalWork == -1 (which means that the task's progress is indeterminate) then all the queue is considered indeterminate
-    public boolean isProgressIndeterminate() {
-        for (Task t : queue) { if (t.getTotalWork() != -1) return false; }
-        return true;
     }
     
     //Properties

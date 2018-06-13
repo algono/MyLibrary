@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package myLibrary.javafx.LoadingUtils;
+package myLibrary.javafx.Loading;
 
-import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -21,11 +21,11 @@ public class LoadingStage extends Stage {
     private boolean implicitHiding = true;
     
     //Constructors
-    public LoadingStage(Task... tasks) {
-        this(LoadingScene.DEF_WIDTH, LoadingScene.DEF_HEIGHT, tasks);
+    public LoadingStage(Worker... workers) {
+        this(LoadingScene.DEF_WIDTH, LoadingScene.DEF_HEIGHT, workers);
     }
-    public LoadingStage(double width, double height, Task... tasks) {
-        this(new LoadingScene(width, height, tasks));
+    public LoadingStage(double width, double height, Worker... workers) {
+        this(new LoadingScene(width, height, workers));
     }
     public LoadingStage(LoadingScene s) {
         super(StageStyle.UNDECORATED);
@@ -35,13 +35,13 @@ public class LoadingStage extends Stage {
         initModality(Modality.APPLICATION_MODAL);
         setScene(scene);
         
-        //If the user tries to close the stage, it cancels the main task
+        //If the user tries to close the stage, it cancels the process
         setOnCloseRequest(e -> { 
             scene.loadingQueue.cancel();
-            e.consume(); //This will prevent the window from closing until the task has been successfully cancelled
+            e.consume(); //This will prevent the window from closing until the process has been successfully cancelled
         });
         
-        //If all tasks ended and the implicitHiding value is set to true, hide the stage
+        //If all workers ended and the implicitHiding value is set to true, hide the stage
         scene.loadingQueue.main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
             if (!isRunning && implicitHiding) hide();
         });
@@ -50,7 +50,7 @@ public class LoadingStage extends Stage {
     //Getting the queue
     public LoadingQueue getQueue() { return scene.getQueue(); }
     
-    //Getting if tasks succeeded or not
+    //Getting if workers succeeded or not
     public boolean waitFor() { return scene.waitFor(); }
     public boolean waitFor(long timeout) { return scene.waitFor(timeout); }
     public boolean isSucceeded() { return scene.isSucceeded(); }

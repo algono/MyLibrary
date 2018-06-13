@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package myLibrary.javafx.LoadingUtils;
+package myLibrary.javafx.Loading;
 
 import javafx.beans.value.ChangeListener;
-import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -27,18 +27,18 @@ public class LoadingScene extends Scene {
     protected final Label label = new Label("Loading...");
     protected final ProgressIndicator progress = new ProgressIndicator();
     
-    //The main task runs the tasks from the queue secuentially
+    //The main Service runs the workers from the queue secuentially
     protected final LoadingQueue loadingQueue;
     protected final ChangeListener<Boolean> startListener;
     
     //Constructors
-    public LoadingScene(Task... tasks) {
-        this(DEF_WIDTH, DEF_HEIGHT, tasks);
+    public LoadingScene(Worker... workers) {
+        this(DEF_WIDTH, DEF_HEIGHT, workers);
     }
-    public LoadingScene(double width, double height, Task... tasks) {
+    public LoadingScene(double width, double height, Worker... workers) {
         super(new VBox(10), width, height);
         VBox root = (VBox) getRoot();
-        loadingQueue = new LoadingQueue(tasks);
+        loadingQueue = new LoadingQueue(workers);
         
         //Sets the default root alignment and elements
         root.setAlignment(Pos.CENTER);
@@ -56,7 +56,7 @@ public class LoadingScene extends Scene {
             if (newValue) { loadingQueue.start(); }
         };
         
-        //Add the properties to any new scene's window so that the tasks start when the scene is shown
+        //Add the properties to any new scene's window so that the workers start when the scene is shown
         windowProperty().addListener((obsWin, oldWindow, newWindow) -> {
             
             //Remove the listener from the previous window (if there's any)
@@ -74,7 +74,7 @@ public class LoadingScene extends Scene {
     public ProgressIndicator getProgressIndicator() { return progress; }
     public LoadingQueue getQueue() { return loadingQueue; }
     
-    //Getting if tasks succeeded or not
+    //Getting if workers succeeded or not
     public boolean waitFor() { return loadingQueue.waitFor(); }
     public boolean waitFor(long timeout) { return loadingQueue.waitFor(timeout); }
     public boolean isSucceeded() { return loadingQueue.isSucceeded(); }

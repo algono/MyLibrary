@@ -3,26 +3,25 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package myLibrary.javafx.LoadingUtils;
+package myLibrary.javafx.Loading;
 
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 
 /**
  *
  * @author Alejandro
  */
-public class LoadingQueue extends LinkedBlockingQueue<Task> {
+public class LoadingQueue extends LinkedBlockingQueue<Worker> {
 
     //Main service
     final LoadingService main;
     
-    public LoadingQueue(Task... tasks) {
-        super(Arrays.asList(tasks));
+    public LoadingQueue(Worker... workers) {
+        super(Arrays.asList(workers));
         main = new LoadingService(this);
         //When the service stops running, notify the threads waiting on waitFor()
         main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
@@ -34,7 +33,7 @@ public class LoadingQueue extends LinkedBlockingQueue<Task> {
     public ReadOnlyStringProperty messageProperty() { return main.messageProperty(); }
     public ReadOnlyDoubleProperty progressProperty() { return main.progressProperty(); }
     
-    //Ways to get if the tasks succeeded or not
+    //Ways to get if the workers succeeded or not
     //1- Wait without timeout
     public boolean waitFor() {
         return waitFor(0); //If timeout = 0, it is not taken into account
@@ -49,7 +48,7 @@ public class LoadingQueue extends LinkedBlockingQueue<Task> {
         return isSucceeded();
     }
     //3- Without waiting, if it is still running returns false
-    public boolean isSucceeded() { 
+    public boolean isSucceeded() {
         return main.getState() == Worker.State.SUCCEEDED;
     }
     

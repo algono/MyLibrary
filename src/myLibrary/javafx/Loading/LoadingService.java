@@ -5,7 +5,11 @@
  */
 package myLibrary.javafx.Loading;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Service;
@@ -16,18 +20,28 @@ import javafx.concurrent.Worker;
  *
  * @author Alejandro
  */
-class LoadingService extends Service<Void> {
+public class LoadingService extends Service<Void> {
 
-    private final LoadingQueue queue;
+    //List of the workers being loaded each time the service starts
+    protected final List<Worker> workers;
+    
+    private final LinkedBlockingQueue<Worker> queue = new LinkedBlockingQueue<>();
+    
     private Worker currentWorker;
 
-    public LoadingService(LoadingQueue lQueue) {
-        queue = lQueue;
+    public LoadingService(Worker... workers) {
+        this(new ArrayList<Worker>(Arrays.asList(workers)));
     }
-
+    public LoadingService(List<Worker> workers) {
+        this.workers = workers;
+        queue.addAll(workers);
+    }
+    
     public Worker getCurrentWorker() {
         return currentWorker;
     }   
+    
+    public List<Worker> getWorkerList() { return workers; }
     
     private static void runAndWait(Runnable runnable) throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -36,6 +50,13 @@ class LoadingService extends Service<Void> {
             latch.countDown();
         });
         latch.await();
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        queue.clear();
+        queue.addAll(workers);
     }
     
     @Override

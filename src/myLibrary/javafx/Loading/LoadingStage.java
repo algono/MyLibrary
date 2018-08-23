@@ -35,28 +35,19 @@ public class LoadingStage extends Stage {
         initModality(Modality.APPLICATION_MODAL);
         setScene(scene);
         
-        //If the user tries to close the stage, it cancels the process
-        setOnCloseRequest(e -> { 
-            scene.loadingQueue.cancel();
-            e.consume(); //This will prevent the window from closing until the process has been successfully cancelled
-        });
-        
         //If all workers ended and the implicitHiding value is set to true, hide the stage
-        scene.loadingQueue.main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
+        scene.main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
             if (!isRunning && implicitHiding) hide();
         });
     }
     
-    //Getting the queue
-    public LoadingQueue getQueue() { return scene.getQueue(); }
+    public LoadingService getLoadingService() { return scene.getLoadingService(); }
     
-    //Getting if workers succeeded or not
-    public boolean waitFor() { return scene.waitFor(); }
-    public boolean waitFor(long timeout) { return scene.waitFor(timeout); }
+    //Getting if the loading process succeeded or not
     public boolean isSucceeded() { return scene.isSucceeded(); }
     
     public void setImplicitHiding(boolean isHiding) {
         implicitHiding = isHiding;
-        if (implicitHiding && !scene.loadingQueue.main.isRunning()) hide();
+        if (implicitHiding && !scene.main.isRunning()) hide();
     }
 }

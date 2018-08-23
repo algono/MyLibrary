@@ -5,6 +5,9 @@
  */
 package myLibrary.javafx.Loading;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Worker;
 import javafx.geometry.Pos;
@@ -34,19 +37,19 @@ public class LoadingScene extends Scene {
     private boolean isProgressBar = false;
     
     //The main Service runs the workers from the queue secuentially
-    protected final LoadingQueue loadingQueue;
+    final LoadingService main;
     
     //Listener for starting the loading Service when the scene is shown
     protected final ChangeListener<Boolean> startListener;
     
     //Constructors
-    public LoadingScene(Worker... workers) {
-        this(DEF_WIDTH, DEF_HEIGHT, workers);
+    public LoadingScene(Worker... theWorkers) {
+        this(DEF_WIDTH, DEF_HEIGHT, theWorkers);
     }
     public LoadingScene(double width, double height, Worker... workers) {
         super(new VBox(10), width, height);
         root = (VBox) getRoot();
-        loadingQueue = new LoadingQueue(workers);
+        main = new LoadingService(workers);
         
         //Sets the default root alignment and elements
         root.setAlignment(Pos.CENTER);
@@ -56,13 +59,14 @@ public class LoadingScene extends Scene {
         label.setTextFill(Color.web("#3d81e3"));
         
         //Listeners/bindings to the message and progress properties
-        loadingQueue.messageProperty().addListener((obs, oldMsg, newMsg) -> label.setText(newMsg));
-        progressIndicator.progressProperty().bind(loadingQueue.progressProperty());
-        progressBar.progressProperty().bind(loadingQueue.progressProperty());
+        main.messageProperty().addListener((obs, oldMsg, newMsg) -> label.setText(newMsg));
+        progressIndicator.progressProperty().bind(main.progressProperty());
+        progressBar.progressProperty().bind(main.progressProperty());
         
-        //Listener that starts the loading process
+        //Listener that starts (or cancels) the loading process
         startListener = (obs, oldValue, newValue) -> {
-            if (newValue) { loadingQueue.start(); }
+            if (newValue) { main.restart(); }
+            else { main.cancel(); }
         };
         
         //Add the properties to any new scene's window so that the workers start when the scene is shown
@@ -72,7 +76,7 @@ public class LoadingScene extends Scene {
             if (oldWindow != null) oldWindow.showingProperty().removeListener(startListener);
             
             //If the window is already showing, start the process now
-            if (newWindow.isShowing()) loadingQueue.start();
+            if (newWindow.isShowing()) main.restart();
             
             newWindow.showingProperty().addListener(startListener);
         });
@@ -81,7 +85,8 @@ public class LoadingScene extends Scene {
     //Getters
     public Label getLabel() { return label; }
     public ProgressIndicator getProgressIndicator() { return isProgressBar ? progressBar : progressIndicator; }
-    public LoadingQueue getQueue() { return loadingQueue; }
+    
+    public LoadingService getLoadingService() { return main; }
     
     //Setters
     public void setLabel(Label l) { label = l; }
@@ -100,9 +105,7 @@ public class LoadingScene extends Scene {
     //Sets the root back to the original root made by the constructor
     public void resetRoot() { setRoot(root); }
     
-    //Getting if workers succeeded or not
-    public boolean waitFor() { return loadingQueue.waitFor(); }
-    public boolean waitFor(long timeout) { return loadingQueue.waitFor(timeout); }
-    public boolean isSucceeded() { return loadingQueue.isSucceeded(); }
+    //Getting if the loading process succeeded or not
+    public boolean isSucceeded() { return main.getState() == Worker.State.SUCCEEDED; }
     
 }

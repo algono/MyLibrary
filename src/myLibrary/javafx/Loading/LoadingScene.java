@@ -5,9 +5,6 @@
  */
 package myLibrary.javafx.Loading;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Worker;
 import javafx.geometry.Pos;
@@ -65,7 +62,7 @@ public class LoadingScene extends Scene {
         
         //Listener that starts (or cancels) the loading process
         startListener = (obs, oldValue, newValue) -> {
-            if (newValue) { main.restart(); }
+            if (newValue && !main.isRunning()) { main.restart(); }
             else { main.cancel(); }
         };
         
@@ -76,7 +73,7 @@ public class LoadingScene extends Scene {
             if (oldWindow != null) oldWindow.showingProperty().removeListener(startListener);
             
             //If the window is already showing, start the process now
-            if (newWindow.isShowing()) main.restart();
+            if (newWindow.isShowing() && !main.isRunning()) main.restart();
             
             newWindow.showingProperty().addListener(startListener);
         });

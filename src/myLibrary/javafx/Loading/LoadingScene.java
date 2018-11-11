@@ -62,8 +62,10 @@ public class LoadingScene extends Scene {
         
         //Listener that starts (or cancels) the loading process
         startListener = (obs, oldValue, newValue) -> {
-            if (newValue && !main.isRunning()) { main.restart(); }
-            else { main.cancel(); }
+            if (newValue) {
+                //If the window is showing, it restarts the Service (if it wasn't already running).
+                if (!main.isRunning()) main.restart();
+            } else { main.cancel(); } //If the window is hiding and the Service is still running, it is cancelled.
         };
         
         //Add the properties to any new scene's window so that the workers start when the scene is shown

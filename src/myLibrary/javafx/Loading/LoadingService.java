@@ -51,13 +51,6 @@ public class LoadingService extends Service<Void> {
         });
         latch.await();
     }
-
-    @Override
-    public void reset() {
-        super.reset();
-        queue.clear();
-        queue.addAll(workers);
-    }
     
     @Override
     public boolean cancel() {
@@ -76,6 +69,8 @@ public class LoadingService extends Service<Void> {
             };
             @Override
             protected Void call() throws Exception {
+                queue.clear(); //It clears the queue and populates it with the assigned workers
+                queue.addAll(workers);
                 while (!isCancelled() && !queue.isEmpty()) {
                     //Gets a worker from the queue
                     currentWorker = queue.poll();

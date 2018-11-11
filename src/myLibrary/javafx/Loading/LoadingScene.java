@@ -28,7 +28,7 @@ public class LoadingScene extends Scene {
     private final VBox root;
     private Label label = new Label("Loading...");
     private final ProgressIndicator progressIndicator = new ProgressIndicator();
-    private final ProgressBar progressBar = new ProgressBar();
+    private final ProgressBar workerProgressBar = new ProgressBar(), totalProgressBar = new ProgressBar();
     
     //If true, the progressBar is shown instead of the progressIndicator (and the other way around)
     private boolean isProgressBar = false;
@@ -36,8 +36,12 @@ public class LoadingScene extends Scene {
     //The main Service runs the workers from the queue secuentially
     final LoadingService main;
     
-    //Listener for starting the loading Service when the scene is shown
+    //Listeners
     protected final ChangeListener<Boolean> startListener;
+    protected final ChangeListener<Worker> currentWorkerListener = (obs, oldWorker, newWorker) -> {
+        workerProgressBar.progressProperty().unbind();
+            if (newWorker != null) workerProgressBar.progressProperty().bind(newWorker.progressProperty());
+    };
     
     //Constructors
     public LoadingScene(Worker... theWorkers) {
@@ -58,8 +62,8 @@ public class LoadingScene extends Scene {
         //Listeners/bindings to the message and progress properties
         main.messageProperty().addListener((obs, oldMsg, newMsg) -> label.setText(newMsg));
         progressIndicator.progressProperty().bind(main.progressProperty());
-        progressBar.progressProperty().bind(main.progressProperty());
-        
+        totalProgressBar.progressProperty().bind(main.progressProperty());
+          
         //Listener that starts (or cancels) the loading process
         startListener = (obs, oldValue, newValue) -> {
             if (newValue) {
@@ -83,7 +87,7 @@ public class LoadingScene extends Scene {
     
     //Getters
     public Label getLabel() { return label; }
-    public ProgressIndicator getProgressIndicator() { return isProgressBar ? progressBar : progressIndicator; }
+    public ProgressIndicator getProgressIndicator() { return isProgressBar ? totalProgressBar : progressIndicator; }
     
     public LoadingService getLoadingService() { return main; }
     
@@ -92,10 +96,16 @@ public class LoadingScene extends Scene {
     public void setProgressBar(boolean willBeProgressBar) {
         if (isProgressBar != willBeProgressBar) { //If the value is actually changing, do the changing based on the new value
             if (willBeProgressBar) {
+                //Adds Listener for workerProgressBar
+                main.currentWorkerProperty().addListener(currentWorkerListener);
+                //Replaces indicator with bars
                 root.getChildren().remove(progressIndicator);
-                root.getChildren().add(progressBar);
+                root.getChildren().addAll(workerProgressBar, totalProgressBar);
             } else {
-                root.getChildren().remove(progressBar);
+                //Removes Listener for workerProgressBar
+                main.currentWorkerProperty().removeListener(currentWorkerListener);
+                //Replaces bars with indicator
+                root.getChildren().removeAll(workerProgressBar, totalProgressBar);
                 root.getChildren().add(progressIndicator);
             }
             isProgressBar = willBeProgressBar;

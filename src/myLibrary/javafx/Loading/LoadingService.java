@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -69,10 +70,30 @@ public class LoadingService extends Service<Void> {
             //Listeners for updating the properties
             private final ChangeListener<String> msgListener = (obs, oldMsg, newMsg) -> updateMessage(newMsg);
             private final ChangeListener<Number> progressListener = (obs, oldProg, newProg) -> {
-                updateProgress(currentWorker.get().getWorkDone(), currentWorker.get().getTotalWork() * workers.size());
+                if (newProg.intValue() > 0) { //Si el progreso no es indeterminado, recalcula el progreso total
+                    double workDone = currentWorker.get().getWorkDone(), totalWork = currentWorker.get().getTotalWork();
+                    /** Regla de 3:
+                     * workDone -- totalWork
+                     *     X    -- 1 + totalWork
+                     * X = (1 + totalWork) * workDone / totalWork
+                     */
+                    updateProgress(this.getWorkDone() + ((1 + totalWork) * workDone / totalWork), this.getTotalWork());
+                }
             };
             @Override
             protected Void call() throws Exception {
+                final AtomicReference<Double> totalWorkRef = new AtomicReference<>(0.0);
+                //Calculates the totalWork of all Workers
+                runAndWait(() -> {
+                    double totalWork = 0.0;
+                    for (Worker w : workers) {
+                        if (w.getTotalWork() > 0) totalWork += w.getTotalWork();
+                        totalWork++;
+                    }
+                    totalWorkRef.set(totalWork);
+                });
+                double totalWork = totalWorkRef.get();
+                
                 queue.clear(); //It clears the queue and populates it with the assigned workers
                 queue.addAll(workers);
                 while (!isCancelled() && !queue.isEmpty()) {
@@ -80,10 +101,15 @@ public class LoadingService extends Service<Void> {
                     Worker worker = queue.poll();
                     currentWorker.set(worker);
                     
+                    //Updates the current progress
+                    if (totalWork > workers.size() || (totalWork == workers.size() && workers.size() > 1)) {
+                        updateProgress(workers.size() - queue.size(), totalWork);
+                    }
+                    
                     //Adds the updater listeners to the current worker properties
                     runAndWait(() -> {
                         worker.messageProperty().addListener(msgListener);
-                        worker.progressProperty().addListener(progressListener);
+                        if (this.getTotalWork() > workers.size()) worker.progressProperty().addListener(progressListener);
                     });
                     
                     final CountDownLatch doneLatch = new CountDownLatch(1);

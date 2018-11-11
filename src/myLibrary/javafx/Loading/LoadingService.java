@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -27,7 +29,7 @@ public class LoadingService extends Service<Void> {
     
     private final LinkedBlockingQueue<Worker> queue = new LinkedBlockingQueue<>();
     
-    private Worker currentWorker;
+    private final ObjectProperty<Worker> currentWorker = new SimpleObjectProperty<>(null);
 
     public LoadingService(Worker... workers) {
         this(new ArrayList<Worker>(Arrays.asList(workers)));
@@ -38,8 +40,9 @@ public class LoadingService extends Service<Void> {
     }
     
     public Worker getCurrentWorker() {
-        return currentWorker;
+        return currentWorker.get();
     }   
+    protected ObjectProperty<Worker> currentWorkerProperty() { return currentWorker; }
     
     public List<Worker> getWorkerList() { return workers; }
     
@@ -55,7 +58,8 @@ public class LoadingService extends Service<Void> {
     @Override
     public boolean cancel() {
         boolean cancelled = super.cancel();
-        if (currentWorker != null && currentWorker.isRunning()) currentWorker.cancel();
+        Worker worker = currentWorker.get();
+        if (worker != null && worker.isRunning()) worker.cancel();
         return cancelled;
     }
 
@@ -65,7 +69,7 @@ public class LoadingService extends Service<Void> {
             //Listeners for updating the properties
             private final ChangeListener<String> msgListener = (obs, oldMsg, newMsg) -> updateMessage(newMsg);
             private final ChangeListener<Number> progressListener = (obs, oldProg, newProg) -> {
-                updateProgress(currentWorker.getWorkDone(), currentWorker.getTotalWork());
+                updateProgress(currentWorker.get().getWorkDone(), currentWorker.get().getTotalWork() * workers.size());
             };
             @Override
             protected Void call() throws Exception {
@@ -73,12 +77,13 @@ public class LoadingService extends Service<Void> {
                 queue.addAll(workers);
                 while (!isCancelled() && !queue.isEmpty()) {
                     //Gets a worker from the queue
-                    currentWorker = queue.poll();
+                    Worker worker = queue.poll();
+                    currentWorker.set(worker);
                     
                     //Adds the updater listeners to the current worker properties
                     runAndWait(() -> {
-                        currentWorker.messageProperty().addListener(msgListener);
-                        currentWorker.progressProperty().addListener(progressListener);
+                        worker.messageProperty().addListener(msgListener);
+                        worker.progressProperty().addListener(progressListener);
                     });
                     
                     final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -88,10 +93,10 @@ public class LoadingService extends Service<Void> {
                     
                     //Runs the worker and waits for its completion
                     //(If the Worker is a Task, it just runs it, but if it is a Service, it restarts the Service)
-                    if (currentWorker instanceof Task) {
-                        ((Task) currentWorker).run();
-                    } else if (currentWorker instanceof Service) {
-                        Service currentService = ((Service) currentWorker);
+                    if (worker instanceof Task) {
+                        ((Task) worker).run();
+                    } else if (worker instanceof Service) {
+                        Service currentService = ((Service) worker);
                         Platform.runLater(() -> {
                             currentService.reset();
                             currentService.runningProperty().addListener(doneListener);
@@ -102,16 +107,17 @@ public class LoadingService extends Service<Void> {
                     
                     runAndWait(() -> {
                         //Removes the updater listeners from the worker properties (as it has ended)
-                        currentWorker.runningProperty().removeListener(doneListener);
-                        currentWorker.messageProperty().removeListener(msgListener);
-                        currentWorker.progressProperty().removeListener(progressListener);
+                        worker.runningProperty().removeListener(doneListener);
+                        worker.messageProperty().removeListener(msgListener);
+                        worker.progressProperty().removeListener(progressListener);
                         
                         //Checks if the worker succeeded. If it didn't, the whole process is cancelled
-                        if (currentWorker.getState() != Worker.State.SUCCEEDED) {
+                        if (worker.getState() != Worker.State.SUCCEEDED) {
                             this.cancel();
                         }
                     });
                 }
+                currentWorker.set(null);
                 return null;
             }
         };

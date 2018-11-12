@@ -27,10 +27,10 @@ public class LoadingService extends Service<Void> {
     //List of the workers being loaded each time the service starts
     protected final List<Worker> workers;
     
-    private final LinkedBlockingQueue<Worker> queue = new LinkedBlockingQueue<>();
+    protected final LinkedBlockingQueue<Worker> queue = new LinkedBlockingQueue<>();
     
     private final ObjectProperty<Worker> currentWorker = new SimpleObjectProperty<>(null);
-
+    
     public LoadingService(Worker... workers) {
         this(new ArrayList<Worker>(Arrays.asList(workers)));
     }

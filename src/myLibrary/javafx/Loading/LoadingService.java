@@ -74,10 +74,8 @@ public class LoadingService extends Service<Void> {
                 queue.clear(); //It clears the queue and populates it with the assigned workers
                 queue.addAll(workers);
                 while (!isCancelled() && !queue.isEmpty()) {
-                    //If there's more than one Worker, updates the current progress
-                    if (workers.size() > 1) {
-                        updateProgress(workers.size() - queue.size(), workers.size());
-                    }
+                    //Updates the current progress
+                    updateProgress(workers.size() - queue.size(), workers.size());
                     //Gets a worker from the queue
                     Worker worker = queue.poll();
                     currentWorker.set(worker);
@@ -117,6 +115,7 @@ public class LoadingService extends Service<Void> {
                         }
                     });
                 }
+                updateProgress(workers.size() - queue.size(), workers.size());
                 currentWorker.set(null);
                 return null;
             }

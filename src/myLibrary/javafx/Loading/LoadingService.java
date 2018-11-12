@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -67,49 +66,25 @@ public class LoadingService extends Service<Void> {
     @Override
     protected Task<Void> createTask() {
         return new Task<Void>() {
-            //Listeners for updating the properties
+            //Listener for updating the msg property
             private final ChangeListener<String> msgListener = (obs, oldMsg, newMsg) -> updateMessage(newMsg);
-            private final ChangeListener<Number> progressListener = (obs, oldProg, newProg) -> {
-                if (newProg.intValue() > 0) { //Si el progreso no es indeterminado, recalcula el progreso total
-                    double workDone = currentWorker.get().getWorkDone(), totalWork = currentWorker.get().getTotalWork();
-                    /** Regla de 3:
-                     * workDone -- totalWork
-                     *     X    -- 1 + totalWork
-                     * X = (1 + totalWork) * workDone / totalWork
-                     */
-                    updateProgress(this.getWorkDone() + ((1 + totalWork) * workDone / totalWork), this.getTotalWork());
-                }
-            };
+            
             @Override
-            protected Void call() throws Exception {
-                final AtomicReference<Double> totalWorkRef = new AtomicReference<>(0.0);
-                //Calculates the totalWork of all Workers
-                runAndWait(() -> {
-                    double totalWork = 0.0;
-                    for (Worker w : workers) {
-                        if (w.getTotalWork() > 0) totalWork += w.getTotalWork();
-                        totalWork++;
-                    }
-                    totalWorkRef.set(totalWork);
-                });
-                double totalWork = totalWorkRef.get();
-                
+            protected Void call() throws Exception {    
                 queue.clear(); //It clears the queue and populates it with the assigned workers
                 queue.addAll(workers);
                 while (!isCancelled() && !queue.isEmpty()) {
+                    //If there's more than one Worker, updates the current progress
+                    if (workers.size() > 1) {
+                        updateProgress(workers.size() - queue.size(), workers.size());
+                    }
                     //Gets a worker from the queue
                     Worker worker = queue.poll();
                     currentWorker.set(worker);
                     
-                    //Updates the current progress
-                    if (totalWork > workers.size() || (totalWork == workers.size() && workers.size() > 1)) {
-                        updateProgress(workers.size() - queue.size(), totalWork);
-                    }
-                    
                     //Adds the updater listeners to the current worker properties
                     runAndWait(() -> {
                         worker.messageProperty().addListener(msgListener);
-                        if (this.getTotalWork() > workers.size()) worker.progressProperty().addListener(progressListener);
                     });
                     
                     final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -135,7 +110,6 @@ public class LoadingService extends Service<Void> {
                         //Removes the updater listeners from the worker properties (as it has ended)
                         worker.runningProperty().removeListener(doneListener);
                         worker.messageProperty().removeListener(msgListener);
-                        worker.progressProperty().removeListener(progressListener);
                         
                         //Checks if the worker succeeded. If it didn't, the whole process is cancelled
                         if (worker.getState() != Worker.State.SUCCEEDED) {

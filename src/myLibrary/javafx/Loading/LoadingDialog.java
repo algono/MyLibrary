@@ -164,13 +164,18 @@ public class LoadingDialog extends Dialog<Worker.State> {
                             workerProgressBar.setVisible(false);
                             if (GridPane.getRowIndex(workerProgressBar) == 0) swapProgressRows();
                             workerProgressBar.setVisible(false);
-                            workerLabel.setVisible(false);
                             root.setPadding(new Insets(45, 0, 0, 0));
                         }
                         //Label bindings
-                        workerLabel.textProperty().bind(Bindings.format("%.0f %%", workerProgressBar.progressProperty().multiply(100)));                        
+                        workerLabel.textProperty().bind(
+                            Bindings.when(workerProgressBar.progressProperty().greaterThanOrEqualTo(0))
+                                    .then(Bindings.format("%.0f %%", workerProgressBar.progressProperty().multiply(100)))
+                                    .otherwise(""));                     
                         if (totalProgressBar.isVisible()) {
-                            totalLabel.textProperty().bind(Bindings.format("%.0f %%", totalProgressBar.progressProperty().multiply(100)));
+                            totalLabel.textProperty().bind(
+                                Bindings.when(totalProgressBar.progressProperty().greaterThanOrEqualTo(0))
+                                    .then(Bindings.format("%.0f %%", totalProgressBar.progressProperty().multiply(100)))
+                                    .otherwise(""));
                             numWorkersLabel.textProperty().bind(Bindings.format("%.0f/%.0f", main.workDoneProperty(), main.totalWorkProperty()));
                         }
                     }

@@ -90,46 +90,46 @@ public class LoadingDialog extends Dialog<Worker.State> {
         //Listeners/bindings to the message and progress properties
         main.messageProperty().addListener((obs, oldMsg, newMsg) -> label.setText(newMsg));
         main.currentWorkerProperty().addListener((obs, oldWorker, newWorker) -> {
-        progressIndicator.progressProperty().unbind();
-        workerProgressBar.progressProperty().unbind();
-        if (newWorker != null) {
-        //A Worker's progressProperty can only be used from the FX Application Thread
-        Platform.runLater(() -> {
-        if (isProgressBar) workerProgressBar.progressProperty().bind(newWorker.progressProperty());
-        else progressIndicator.progressProperty().bind(newWorker.progressProperty());
-        });
-        }
+            progressIndicator.progressProperty().unbind();
+            workerProgressBar.progressProperty().unbind();
+            if (newWorker != null) {
+                //A Worker's progressProperty can only be used from the FX Application Thread
+                Platform.runLater(() -> {
+                    if (isProgressBar) workerProgressBar.progressProperty().bind(newWorker.progressProperty());
+                    else progressIndicator.progressProperty().bind(newWorker.progressProperty());
+                });
+            }
         });
         workerProgressListener = (obs, oldProg, newProg) -> {
-        if (oldProg.doubleValue() < 0 && newProg.doubleValue() >= 0) {
-        if (GridPane.getRowIndex(workerProgressBar) == 1) swapProgressRows();
-        workerProgressBar.setVisible(true);
-        workerLabel.setVisible(showProgressNumber);
-        if (totalProgressBar.isVisible()) root.setPadding(new Insets(20, 0, 0, 0));
-        } else if (totalProgressBar.isVisible() && showProgressNumber && oldProg.doubleValue() >= 0 && newProg.doubleValue() < 0) {
-        if (GridPane.getRowIndex(workerProgressBar) == 0) swapProgressRows();
-        workerProgressBar.setVisible(false);
-        workerLabel.setVisible(false);
-        root.setPadding(new Insets(45, 0, 0, 0));
-        }
+            if (oldProg.doubleValue() < 0 && newProg.doubleValue() >= 0) {
+                if (GridPane.getRowIndex(workerProgressBar) == 1) swapProgressRows();
+                workerProgressBar.setVisible(true);
+                workerLabel.setVisible(showProgressNumber);
+                if (totalProgressBar.isVisible()) root.setPadding(new Insets(20, 0, 0, 0));
+            } else if (totalProgressBar.isVisible() && showProgressNumber && oldProg.doubleValue() >= 0 && newProg.doubleValue() < 0) {
+                if (GridPane.getRowIndex(workerProgressBar) == 0) swapProgressRows();
+                workerProgressBar.setVisible(false);
+                workerLabel.setVisible(false);
+                root.setPadding(new Insets(45, 0, 0, 0));
+            }
         };
         //Sets some properties when main starts/stops running
         main.runningProperty().addListener((obs, wasRunning, isRunning) -> {
-        if (!isRunning) {
-        workerProgressBar.progressProperty().removeListener(workerProgressListener);
-        //If all workers ended and implicitHiding is true (or main wasn't succeeded), hide the stage
-        if (implicitHiding || !isSucceeded()) {
-        setResult(main.getState());
-        this.hide();
-        } else if (!implicitHiding) {
-        label.setText("");
-        progressIndicator.progressProperty().unbind();
-        if (progressIndicator.isVisible()) progressIndicator.setProgress(1);
-        workerProgressBar.progressProperty().unbind();
-        if (workerProgressBar.isVisible()) workerProgressBar.setProgress(1);
-        if (showButton) getDialogPane().getButtonTypes().setAll(ButtonType.CLOSE);
-        }
-        }
+            if (!isRunning) {
+                workerProgressBar.progressProperty().removeListener(workerProgressListener);
+                //If all workers ended and implicitHiding is true (or main wasn't succeeded), hide the stage
+                if (implicitHiding || !isSucceeded()) {
+                    setResult(main.getState());
+                    this.hide();
+                } else if (!implicitHiding) {
+                    label.setText("");
+                    progressIndicator.progressProperty().unbind();
+                    if (progressIndicator.isVisible()) progressIndicator.setProgress(1);
+                    workerProgressBar.progressProperty().unbind();
+                    if (workerProgressBar.isVisible()) workerProgressBar.setProgress(1);
+                    if (showButton) getDialogPane().getButtonTypes().setAll(ButtonType.CLOSE);
+                }
+            }
         });
         totalProgressBar.progressProperty().bind(main.progressProperty());
         
@@ -170,56 +170,57 @@ public class LoadingDialog extends Dialog<Worker.State> {
     
     //Listeners
     private void showingListener(ObservableValue<? extends Boolean> obs, Boolean wasShowing, Boolean isShowing) {
-            if (isShowing) {
-                //Sets the Cancel/Close button
-                if (showButton) getDialogPane().getButtonTypes().setAll(ButtonType.CANCEL);
-                //Visibility for Progress Indicator
-                progressIndicator.setVisible(!isProgressBar);
-                workerProgressBar.setVisible(isProgressBar);
-                totalProgressBar.setVisible(isProgressBar && main.workers.size() > 1);
-                //Progress Labels bindings (It unbinds them by default, will bind them if conditions are met)
-                workerLabel.textProperty().unbind();
-                totalLabel.textProperty().unbind();
-                numWorkersLabel.textProperty().unbind();
-                //Total progress visibility + bindings
-                if (isProgressBar) {
-                    //Visibility Progress Labels
-                    totalLabel.setVisible(showProgressNumber);
-                    numWorkersLabel.setVisible(showProgressNumber);
-                    workerLabel.setVisible(showProgressNumber);
-                    //Bindings
-                    workerProgressBar.progressProperty().addListener(workerProgressListener);
-                    if (showProgressNumber) {
-                        //It initializes as progress being indeterminate
-                        workerLabel.setVisible(false);
-                        if (totalProgressBar.isVisible()) {
-                            workerProgressBar.setVisible(false);
-                            if (GridPane.getRowIndex(workerProgressBar) == 0) swapProgressRows();
-                            workerProgressBar.setVisible(false);
-                            root.setPadding(new Insets(45, 0, 0, 0));
-                        }
-                        //Label bindings
-                        workerLabel.textProperty().bind(
-                            Bindings.when(workerProgressBar.progressProperty().greaterThanOrEqualTo(0))
-                                    .then(Bindings.format("%.0f %%", workerProgressBar.progressProperty().multiply(100)))
-                                    .otherwise(""));                     
-                        if (totalProgressBar.isVisible()) {
-                            totalLabel.textProperty().bind(
-                                Bindings.when(totalProgressBar.progressProperty().greaterThanOrEqualTo(0))
-                                    .then(Bindings.format("%.0f %%", totalProgressBar.progressProperty().multiply(100)))
-                                    .otherwise(""));
-                            numWorkersLabel.textProperty().bind(Bindings.format("%.0f/%.0f", main.workDoneProperty(), main.totalWorkProperty()));
-                        }
+        if (isShowing) {
+            //Sets the Cancel/Close button
+            if (showButton) getDialogPane().getButtonTypes().setAll(ButtonType.CANCEL);
+            //Visibility for Progress Indicator
+            progressIndicator.setVisible(!isProgressBar);
+            workerProgressBar.setVisible(isProgressBar);
+            totalProgressBar.setVisible(isProgressBar && main.workers.size() > 1);
+            //Progress Labels bindings (It unbinds them by default, will bind them if conditions are met)
+            workerLabel.textProperty().unbind();
+            totalLabel.textProperty().unbind();
+            numWorkersLabel.textProperty().unbind();
+            //Total progress visibility + bindings
+            if (isProgressBar) {
+                //Visibility Progress Labels
+                totalLabel.setVisible(showProgressNumber);
+                numWorkersLabel.setVisible(showProgressNumber);
+                workerLabel.setVisible(showProgressNumber);
+                //Bindings
+                workerProgressBar.progressProperty().addListener(workerProgressListener);
+                if (showProgressNumber) {
+                    //It initializes as progress being indeterminate
+                    workerLabel.setVisible(false);
+                    if (totalProgressBar.isVisible()) {
+                        workerProgressBar.setVisible(false);
+                        if (GridPane.getRowIndex(workerProgressBar) == 0) swapProgressRows();
+                        workerProgressBar.setVisible(false);
+                        root.setPadding(new Insets(45, 0, 0, 0));
+                    }
+                    //Label bindings
+                    workerLabel.textProperty().bind(
+                        Bindings.when(workerProgressBar.progressProperty().greaterThanOrEqualTo(0))
+                                .then(Bindings.format("%.0f %%", workerProgressBar.progressProperty().multiply(100)))
+                                .otherwise(""));                     
+                    if (totalProgressBar.isVisible()) {
+                        totalLabel.textProperty().bind(
+                            Bindings.when(totalProgressBar.progressProperty().greaterThanOrEqualTo(0))
+                                .then(Bindings.format("%.0f %%", totalProgressBar.progressProperty().multiply(100)))
+                                .otherwise(""));
+                        numWorkersLabel.textProperty().bind(Bindings.format("%.0f/%.0f", main.workDoneProperty(), main.totalWorkProperty()));
                     }
                 }
-                //Add GridPane
-                root.getChildren().add(progressPane);
-                //If the window is showing, it restarts the Service (if it wasn't already running).
-                if (!main.isRunning()) main.restart();
-            } else { //If the window is hiding and the Service is still running, it is cancelled.
-                if (main.isRunning()) main.cancel();
             }
+            //Add GridPane
+            root.getChildren().add(progressPane);
+            //If the window is showing, it restarts the Service (if it wasn't already running).
+            if (!main.isRunning()) main.restart();
+        //If the window is hiding and the Service is still running, it is cancelled.
+        } else if (main.isRunning()) {
+            main.cancel();
         }
+    }
     //GridPane method
     protected void swapProgressRows() { swapRows(progressPane, 0, 1); }
     //Static methods

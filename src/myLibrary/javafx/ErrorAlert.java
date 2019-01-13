@@ -28,11 +28,13 @@ public class ErrorAlert extends Alert {
     
     private void init(Throwable ex) {
         setHeaderText(null);
-        String errorOutput = (ex == null) ? null : ex.getMessage();
-        if (errorOutput != null && !errorOutput.isEmpty()) {
-            TextArea errorContent = new TextArea(errorOutput);
-            errorContent.setEditable(false); errorContent.setWrapText(true);
-            getDialogPane().setExpandableContent(new VBox(errorContent));
+        if (ex != null) {
+            String errorOutput = ex.getMessage();
+            if (!errorOutput.isEmpty()) {
+                TextArea errorContent = new TextArea(errorOutput);
+                errorContent.setEditable(false); errorContent.setWrapText(true);
+                getDialogPane().setExpandableContent(new VBox(errorContent));
+            }
         }
     }
     

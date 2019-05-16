@@ -55,10 +55,10 @@ public class LoadingDialog extends Dialog<Worker.State> {
     //The main Service runs the workers from the queue secuentially
     protected final LoadingService main;
     
-    public LoadingDialog(Worker... workers) {
+    public LoadingDialog(Worker<?>... workers) {
         this(DEF_WIDTH, DEF_HEIGHT, workers);
     }
-    public LoadingDialog(double width, double height, Worker... workers) {
+    public LoadingDialog(double width, double height, Worker<?>... workers) {
         super();
         initStyle(StageStyle.UNDECORATED);
         setTitle("Loading...");
